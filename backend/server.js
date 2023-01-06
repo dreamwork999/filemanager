@@ -7,6 +7,7 @@
 **/
 
 const express = require('express');
+const path = require('path');
 const cors = require('cors');
 const xss = require('xss-clean');
 const rateLimit = require('express-rate-limit');
@@ -34,6 +35,8 @@ const limiter = rateLimit({
   windowMs: 1 * 60 * 1000,
   message: new AppError(`Too many requests from this IP, please try again in an 1 minutes`, 429)
 });
+// Have Node serve the files for our built React app
+app.use(express.static(path.resolve(__dirname, '../frontend/build')));
 
 app.use('*', limiter);
 
@@ -44,6 +47,11 @@ app.all('*', (req, res, next) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
 });
 app.use(globalErrorHandler);
+
+// All other GET requests not handled before will return our React app
+app.get('*', (req, res) => {
+  res.sendFile(path.resolve(__dirname, '../frontend/build', 'index.html'));
+});
 
 app.listen(port, () => {
   console.log(`App running on port ${port}.`);
